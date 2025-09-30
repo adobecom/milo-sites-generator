@@ -87,11 +87,11 @@ class Generator extends LitElement {
           <label>Website name</label>
           <sl-input type="text" name="siteName" placeholder="Add the name of your new milo powered project"></sl-input>
         </div>
-        <!--
         <div class="fieldgroup">
-          <label>School tagline</label>
-          <sl-textarea class="tagline" name="schoolTagline" resize="none" placeholder="Add tagline"></sl-textarea>
+          <label>Website description</label>
+          <sl-textarea class="tagline" name="siteDescription" resize="none" placeholder="Add a description for your site"></sl-textarea>
         </div>
+        <!--
         <div class="fieldgroup">
           <label>Principal's name</label>
           <sl-input type="text" name="principalName" placeholder="Enter name"></sl-input>
