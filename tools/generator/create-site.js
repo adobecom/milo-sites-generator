@@ -1,17 +1,19 @@
 import { crawl } from 'https://da.live/nx/public/utils/tree.js';
 import DA_SDK from 'https://da.live/nx/utils/sdk.js';
-const { token } = await DA_SDK;
 
 const DA_ORIGIN = 'https://admin.da.live';
 const AEM_ORIGIN = 'https://admin.hlx.page';
 
-const HEADERS = {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${token}`,
-};
+async function getHeaders() {
+  const { token } = await DA_SDK;
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+  };
+}
 
-export const ORG = 'nsw-pilot';
-const BLUEPRINT = 'blueprint';
+export const ORG = 'adobecom';
+const BLUEPRINT = 'milo-starter';
 const COPY_FROM = `/${ORG}/${BLUEPRINT}/`;
 
 function getConfig(siteName) {
@@ -19,7 +21,7 @@ function getConfig(siteName) {
     version: 1,
     content: {
       source: {
-        url: `https://content.da.live/nsw-pilot/${siteName}/`,
+        url: `https://content.da.live/adobecom/${siteName}/`,
         type: 'markup',
       }
     },
@@ -32,13 +34,12 @@ function getConfig(siteName) {
 async function createConfig(data) {
   const { siteName } = data;
   const config = getConfig(siteName);
-
+  const headers = await getHeaders();
   const opts = {
     method: 'POST',
     body: JSON.stringify(config),
-    headers: HEADERS,
+    headers,
   };
-
   const res = await fetch(`${AEM_ORIGIN}/config/${ORG}/sites/${data.siteName}.json`, opts);
   if (!res.ok) throw new Error(`Failed to create config: ${res.statusText}`);
 }
@@ -56,10 +57,10 @@ async function replaceTemplate(data) {
     // replace template values
     const indexText = await indexRes.text();
     const templatedText = indexText
-      .replaceAll('{{name-of-school}}', data.schoolName)
-      .replaceAll('{{school-tagline}}', data.schoolTagline)
-      .replaceAll('{{principal-name}}', data.principalName)
-      .replaceAll('{{principal-message}}', data.principalMessage);
+      .replaceAll('{{name-site}}', data.siteName)
+      // .replaceAll('{{school-tagline}}', data.schoolTagline)
+      // .replaceAll('{{principal-name}}', data.principalName)
+      // .replaceAll('{{principal-message}}', data.principalMessage);
       
 
     // update index
@@ -77,8 +78,8 @@ async function previewOrPublishPages(data, action, setStatus) {
   const parent = `/${ORG}/${data.siteName}`;
 
   const label = action === 'preview' ? 'Previewing' : 'Publishing';
-
-  const opts = { method: 'POST', headers: { Authorization: `Bearer ${token}` } };
+  const headers = await getHeaders();
+  const opts = { method: 'POST', headers };
 
   const callback = async (item) => {
     if (item.path.endsWith('.svg') || item.path.endsWith('.png') || item.path.endsWith('.jpg')) return;

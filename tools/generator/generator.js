@@ -3,7 +3,9 @@ import getStyle from 'https://da.live/nx/utils/styles.js';
 import { LitElement, html, nothing } from 'da-lit';
 import { ORG, createSite } from './create-site.js';
 
+console.log('Generator module imports loaded');
 const style = await getStyle(import.meta.url);
+
 
 class Generator extends LitElement {
   static properties = {
@@ -43,7 +45,7 @@ class Generator extends LitElement {
     
     this._data = {
       ...entries,
-      siteName: entries.schoolName.replaceAll(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
+      siteName: entries.siteName.replaceAll(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
     };
 
     const setStatus = (status) => { this._status = status; };
@@ -82,9 +84,10 @@ class Generator extends LitElement {
     return html`
       <form>
         <div class="fieldgroup">
-          <label>School name</label>
-          <sl-input type="text" name="schoolName" placeholder="Add name"></sl-input>
+          <label>Website name</label>
+          <sl-input type="text" name="siteName" placeholder="Add the name of your new milo powered project"></sl-input>
         </div>
+        <!--
         <div class="fieldgroup">
           <label>School tagline</label>
           <sl-textarea class="tagline" name="schoolTagline" resize="none" placeholder="Add tagline"></sl-textarea>
@@ -97,6 +100,7 @@ class Generator extends LitElement {
           <label>Principal's message</label>
           <sl-textarea class="message" resize="none" name="principalMessage" placeholder="Enter message"></sl-textarea>
         </div>
+        -->
         <div class="form-footer">
           <div>
           </div>
