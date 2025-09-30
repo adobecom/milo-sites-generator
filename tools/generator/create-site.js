@@ -58,7 +58,7 @@ async function replaceTemplate(data) {
     const indexText = await indexRes.text();
     const templatedText = indexText
       .replaceAll('{{name-site}}', data.siteName)
-      // .replaceAll('{{school-tagline}}', data.schoolTagline)
+      .replaceAll('{{description-site}}', data.siteDescription)
       // .replaceAll('{{principal-name}}', data.principalName)
       // .replaceAll('{{principal-message}}', data.principalMessage);
       
