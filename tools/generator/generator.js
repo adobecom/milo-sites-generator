@@ -68,13 +68,13 @@ class Generator extends LitElement {
     return html`
       <div class="success-panel">
         <h2>Edit content</h2>
-        <p><a href="https://da.live/edit#/${ORG}/${this._data.siteName}/nav" target="_blank">Edit main navigation</a></p>
-        <p><a href="https://da.live/edit#/${ORG}/${this._data.siteName}/footer" target="_blank">Edit footer</a></p>
-        <p><a href="https://da.live/#/${ORG}/${this._data.siteName}" target="_blank">View all content</a></p>
+        <p><a href="https://da.live/edit#/${ORG}/msg-${this._data.siteName}/gnav" target="_blank">Edit main navigation</a></p>
+        <p><a href="https://da.live/edit#/${ORG}/msg-${this._data.siteName}/footer" target="_blank">Edit footer</a></p>
+        <p><a href="https://da.live/#/${ORG}/msg-${this._data.siteName}" target="_blank">View all content</a></p>
       </div>
       <div class="success-panel">
         <h2>View site</h2>
-        <p><a href="https://main--${this._data.siteName}--${ORG}.aem.page" target="_blank">Visit site</a></p>
+        <p><a href="https://main--msg-${this._data.siteName}--${ORG}.aem.page" target="_blank">Visit site</a></p>
       </div>
       <p class="status ${this._status.type || 'note'}">${this._status.message}</p>
     `;
@@ -85,11 +85,11 @@ class Generator extends LitElement {
       <form>
         <div class="fieldgroup">
           <label>Website name</label>
-          <sl-input type="text" name="siteName" placeholder="Add the name of your new milo powered project"></sl-input>
+          <sl-input type="text" name="siteName" placeholder="Add the name of your new milo powered project" value="milo-starter-1"></sl-input>
         </div>
         <div class="fieldgroup">
           <label>Website description</label>
-          <sl-textarea class="tagline" name="siteDescription" resize="none" placeholder="Add a description for your site"></sl-textarea>
+          <sl-textarea class="tagline" name="siteDescription" resize="none" placeholder="Add a description for your site" value="description123" >description</sl-textarea>
         </div>
         <!--
         <div class="fieldgroup">
