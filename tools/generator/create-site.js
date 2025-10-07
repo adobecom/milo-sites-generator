@@ -4,7 +4,6 @@ import DA_SDK from 'https://da.live/nx/utils/sdk.js';
 const DA_ORIGIN = 'https://admin.da.live';
 const AEM_ORIGIN = 'https://admin.hlx.page';
 export const ORG = 'adobecom';
-const prefix = 'msg-';
 async function getAccessToken() {
   let token;
   try {
@@ -22,9 +21,6 @@ async function getAccessToken() {
   return token;
 }
 
-// msg = milo sites generator
-const getSiteName = (siteName, customPrefix = prefix) => `${customPrefix}${siteName}`
-
 function getConfig(siteName, githubSettings = {}) {
   const { githubOwner = 'adobecom', githubRepo = 'milo-starter', githubUrl = 'https://github.com/adobecom/milo-starter' } = githubSettings;
   
@@ -32,7 +28,7 @@ function getConfig(siteName, githubSettings = {}) {
     "version": 1,
     "content": {
       "source": {
-        "url": `https://content.da.live/${ORG}/${getSiteName(siteName)}/`,
+        "url": `https://content.da.live/${ORG}/${siteName}/`,
         "type": 'markup',
       }
     },
@@ -60,16 +56,16 @@ async function createConfig(data) {
       'Authorization': `Bearer ${token}`,
     },
   };
-  const res = await fetch(`${AEM_ORIGIN}/config/${ORG}/sites/${getSiteName(siteName, data.sitePrefix)}.json`, opts);
+  const res = await fetch(`${AEM_ORIGIN}/config/${ORG}/sites/${siteName}.json`, opts);
   if (!res.ok) throw new Error(`Failed to create config: ${res.statusText}`);
 }
 
 async function replaceTemplate(data) {
-  const { siteName, sitePrefix } = data;
+  const { siteName } = data;
   const templatePaths = ['/index.html', '/gnav.html', '/footer.html'];
 
   await Promise.all(templatePaths.map(async (path) => {
-    const daPath = `https://admin.da.live/source/${ORG}/${getSiteName(siteName, sitePrefix)}${path}`;
+    const daPath = `https://admin.da.live/source/${ORG}/${siteName}${path}`;
     const token = await getAccessToken();
 
     // get index
@@ -99,8 +95,8 @@ async function replaceTemplate(data) {
 }
 
 async function getPageList(data) {
-  const { siteName, sitePrefix } = data;
-  const parent = `/${ORG}/${getSiteName(siteName, sitePrefix)}`;
+  const { siteName } = data;
+  const parent = `/${ORG}/${siteName}`;
   const pages = [];
   
   const callback = (item) => {
@@ -122,8 +118,8 @@ async function getPageList(data) {
 }
 
 async function previewOrPublishPages(data, action, setStatus, updatePageStatus) {
-  const { siteName, sitePrefix } = data;
-  const parent = `/${ORG}/${getSiteName(siteName, sitePrefix)}`;
+  const { siteName } = data;
+  const parent = `/${ORG}/${siteName}`;
   const pages = await getPageList(data);
   
   const label = action === 'preview' ? 'Previewing' : 'Publishing';
@@ -157,9 +153,9 @@ async function previewOrPublishPages(data, action, setStatus, updatePageStatus) 
 }
 
 async function copyContent(data) {
-  const { siteName, sitePrefix } = data;
+  const { siteName } = data;
   const formData = new FormData();
-  const destination = `/${ORG}/${getSiteName(siteName, sitePrefix)}`;
+  const destination = `/${ORG}/${siteName}`;
   const token = await getAccessToken();
   formData.set('destination', destination);
   const opts = {  method: 'POST', body: formData, headers: {

@@ -5,8 +5,6 @@ import { ORG, createSite } from './create-site.js';
 
 console.log('Generator module imports loaded');
 const style = await getStyle(import.meta.url);
-const prefix = 'msg-'
-
 class Generator extends LitElement {
   static properties = {
     _data: { state: true },
@@ -51,12 +49,6 @@ class Generator extends LitElement {
     const formData = new FormData(e.target.closest('form'));
     const entries = Object.fromEntries(formData.entries());
 
-    const empty = Object.keys(entries).some((key) => !entries[key]);
-    if (empty) {
-      this._status = { type: 'error', message: 'Some fields empty.' };
-      this._loading = false;
-      return;
-    }
 
     const startTime = Date.now();
     const getTime = setInterval(() => {
@@ -66,7 +58,6 @@ class Generator extends LitElement {
     this._data = {
       ...entries,
       siteName: entries.siteName.replaceAll(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
-      sitePrefix: entries.sitePrefix || 'msg-',
       githubOwner: entries.githubOwner || 'adobecom',
       githubRepo: entries.githubRepo || 'milo-starter',
       githubUrl: entries.githubUrl || 'https://github.com/adobecom/milo-starter',
@@ -125,13 +116,13 @@ class Generator extends LitElement {
     return html`
       <div class="success-panel">
         <h2>Edit content</h2>
-        <p><a href="https://da.live/edit#/${ORG}${prefix}${this._data.siteName}/gnav" target="_blank">Edit main navigation</a></p>
-        <p><a href="https://da.live/edit#/${ORG}${prefix}${this._data.siteName}/footer" target="_blank">Edit footer</a></p>
-        <p><a href="https://da.live/#/${ORG}${prefix}${this._data.siteName}" target="_blank">View all content</a></p>
+        <p><a href="https://da.live/edit#/${ORG}${this._data.siteName}/gnav" target="_blank">Edit main navigation</a></p>
+        <p><a href="https://da.live/edit#/${ORG}${this._data.siteName}/footer" target="_blank">Edit footer</a></p>
+        <p><a href="https://da.live/#/${ORG}${this._data.siteName}" target="_blank">View all content</a></p>
       </div>
       <div class="success-panel">
         <h2>View site</h2>
-        <p><a href="https://main--${prefix}${this._data.siteName}--${ORG}.aem.page" target="_blank">Visit site</a></p>
+        <p><a href="https://main--${this._data.siteName}--${ORG}.aem.page" target="_blank">Visit site</a></p>
       </div>
       <p class="status ${this._status.type || 'note'}">${this._status.message}</p>
     `;
@@ -206,13 +197,6 @@ class Generator extends LitElement {
           
           ${this._showAdvanced ? html`
             <div class="advanced-content">
-              <div class="fieldgroup">
-                <label>
-                  <div class="field-icon">🏷️</div>
-                  Site Prefix
-                </label>
-                <sl-input type="text" name="sitePrefix" placeholder="msg-" value="msg-" help-text="Prefix for your site name (e.g., 'msg-' for 'msg-mysite')"></sl-input>
-              </div>
               <div class="fieldgroup">
                 <label>
                   <div class="field-icon">👤</div>
