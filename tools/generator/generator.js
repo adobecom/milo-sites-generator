@@ -5,7 +5,7 @@ import { ORG, createSite } from './create-site.js';
 
 console.log('Generator module imports loaded');
 const style = await getStyle(import.meta.url);
-
+const prefix = 'msg-'
 
 class Generator extends LitElement {
   static properties = {
@@ -16,12 +16,14 @@ class Generator extends LitElement {
     _progress: { state: true },
     _currentStep: { state: true },
     _pages: { state: true },
+    _showAdvanced: { state: true },
   };
 
   constructor() {
     super();
     this._time = '~1min for site creation';
     this._pages = [];
+    this._showAdvanced = false;
   }
 
   async connectedCallback() {
@@ -32,6 +34,10 @@ class Generator extends LitElement {
   calculateCrawlTime(startTime) {
     const crawlTime = Date.now() - startTime;
     return `${String(crawlTime / 1000).substring(0, 4)}s`;
+  }
+
+  toggleAdvanced() {
+    this._showAdvanced = !this._showAdvanced;
   }
 
   async handleSubmit(e) {
@@ -60,6 +66,10 @@ class Generator extends LitElement {
     this._data = {
       ...entries,
       siteName: entries.siteName.replaceAll(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
+      sitePrefix: entries.sitePrefix || 'msg-',
+      githubOwner: entries.githubOwner || 'adobecom',
+      githubRepo: entries.githubRepo || 'milo-starter',
+      githubUrl: entries.githubUrl || 'https://github.com/adobecom/milo-starter',
     };
 
     const steps = [
@@ -115,13 +125,13 @@ class Generator extends LitElement {
     return html`
       <div class="success-panel">
         <h2>Edit content</h2>
-        <p><a href="https://da.live/edit#/${ORG}/msg-${this._data.siteName}/gnav" target="_blank">Edit main navigation</a></p>
-        <p><a href="https://da.live/edit#/${ORG}/msg-${this._data.siteName}/footer" target="_blank">Edit footer</a></p>
-        <p><a href="https://da.live/#/${ORG}/msg-${this._data.siteName}" target="_blank">View all content</a></p>
+        <p><a href="https://da.live/edit#/${ORG}${prefix}${this._data.siteName}/gnav" target="_blank">Edit main navigation</a></p>
+        <p><a href="https://da.live/edit#/${ORG}${prefix}${this._data.siteName}/footer" target="_blank">Edit footer</a></p>
+        <p><a href="https://da.live/#/${ORG}${prefix}${this._data.siteName}" target="_blank">View all content</a></p>
       </div>
       <div class="success-panel">
         <h2>View site</h2>
-        <p><a href="https://main--msg-${this._data.siteName}--${ORG}.aem.page" target="_blank">Visit site</a></p>
+        <p><a href="https://main--${prefix}${this._data.siteName}--${ORG}.aem.page" target="_blank">Visit site</a></p>
       </div>
       <p class="status ${this._status.type || 'note'}">${this._status.message}</p>
     `;
@@ -186,6 +196,46 @@ class Generator extends LitElement {
             </label>
             <sl-textarea name="siteDescription" resize="vertical" placeholder="Describe your website in detail..." value="description123" rows="4">description</sl-textarea>
           </div>
+        </div>
+        
+        <div class="advanced-settings">
+          <button type="button" class="advanced-toggle" @click=${this.toggleAdvanced}>
+            <span class="advanced-icon">${this._showAdvanced ? '▼' : '▶'}</span>
+            Advanced Settings
+          </button>
+          
+          ${this._showAdvanced ? html`
+            <div class="advanced-content">
+              <div class="fieldgroup">
+                <label>
+                  <div class="field-icon">🏷️</div>
+                  Site Prefix
+                </label>
+                <sl-input type="text" name="sitePrefix" placeholder="msg-" value="msg-" help-text="Prefix for your site name (e.g., 'msg-' for 'msg-mysite')"></sl-input>
+              </div>
+              <div class="fieldgroup">
+                <label>
+                  <div class="field-icon">👤</div>
+                  GitHub Repository Owner
+                </label>
+                <sl-input type="text" name="githubOwner" placeholder="adobecom" value="adobecom" help-text="GitHub username or organization"></sl-input>
+              </div>
+              <div class="fieldgroup">
+                <label>
+                  <div class="field-icon">📦</div>
+                  GitHub Repository Name
+                </label>
+                <sl-input type="text" name="githubRepo" placeholder="milo-starter" value="milo-starter" help-text="Repository name (e.g., 'milo-starter')"></sl-input>
+              </div>
+              <div class="fieldgroup">
+                <label>
+                  <div class="field-icon">🔗</div>
+                  GitHub Repository URL
+                </label>
+                <sl-input type="text" name="githubUrl" placeholder="https://github.com/adobecom/milo-starter" value="https://github.com/adobecom/milo-starter" help-text="Full GitHub repository URL"></sl-input>
+              </div>
+            </div>
+          ` : nothing}
         </div>
         <div class="form-footer">
           <div class="time-actions">

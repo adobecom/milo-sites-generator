@@ -4,6 +4,7 @@ import DA_SDK from 'https://da.live/nx/utils/sdk.js';
 const DA_ORIGIN = 'https://admin.da.live';
 const AEM_ORIGIN = 'https://admin.hlx.page';
 export const ORG = 'adobecom';
+const prefix = 'msg-';
 async function getAccessToken() {
   let token;
   try {
@@ -22,9 +23,11 @@ async function getAccessToken() {
 }
 
 // msg = milo sites generator
-const getSiteName = siteName => `msg-${siteName}`
+const getSiteName = (siteName, customPrefix = prefix) => `${customPrefix}${siteName}`
 
-function getConfig(siteName) {
+function getConfig(siteName, githubSettings = {}) {
+  const { githubOwner = 'adobecom', githubRepo = 'milo-starter', githubUrl = 'https://github.com/adobecom/milo-starter' } = githubSettings;
+  
   return {
     "version": 1,
     "content": {
@@ -34,19 +37,20 @@ function getConfig(siteName) {
       }
     },
     "code": {
-      "owner": "adobecom",
-      "repo": "milo-starter",
+      "owner": githubOwner,
+      "repo": githubRepo,
       "source": {
         "type": "github",
-        "url": "https://github.com/adobecom/milo-starter"
+        "url": githubUrl
       }
     },
   }
 }
 
 async function createConfig(data) {
-  const { siteName } = data;
-  const config = getConfig(siteName);
+  const { siteName, githubOwner, githubRepo, githubUrl } = data;
+  const githubSettings = { githubOwner, githubRepo, githubUrl };
+  const config = getConfig(siteName, githubSettings);
   const token = await getAccessToken();
   const opts = {
     method: 'POST',
@@ -56,15 +60,16 @@ async function createConfig(data) {
       'Authorization': `Bearer ${token}`,
     },
   };
-  const res = await fetch(`${AEM_ORIGIN}/config/${ORG}/sites/${getSiteName(data.siteName)}.json`, opts);
+  const res = await fetch(`${AEM_ORIGIN}/config/${ORG}/sites/${getSiteName(siteName, data.sitePrefix)}.json`, opts);
   if (!res.ok) throw new Error(`Failed to create config: ${res.statusText}`);
 }
 
 async function replaceTemplate(data) {
+  const { siteName, sitePrefix } = data;
   const templatePaths = ['/index.html', '/gnav.html', '/footer.html'];
 
   await Promise.all(templatePaths.map(async (path) => {
-    const daPath = `https://admin.da.live/source/${ORG}/${getSiteName(data.siteName)}${path}`;
+    const daPath = `https://admin.da.live/source/${ORG}/${getSiteName(siteName, sitePrefix)}${path}`;
     const token = await getAccessToken();
 
     // get index
@@ -94,7 +99,8 @@ async function replaceTemplate(data) {
 }
 
 async function getPageList(data) {
-  const parent = `/${ORG}/${getSiteName(data.siteName)}`;
+  const { siteName, sitePrefix } = data;
+  const parent = `/${ORG}/${getSiteName(siteName, sitePrefix)}`;
   const pages = [];
   
   const callback = (item) => {
@@ -116,7 +122,8 @@ async function getPageList(data) {
 }
 
 async function previewOrPublishPages(data, action, setStatus, updatePageStatus) {
-  const parent = `/${ORG}/${getSiteName(data.siteName)}`;
+  const { siteName, sitePrefix } = data;
+  const parent = `/${ORG}/${getSiteName(siteName, sitePrefix)}`;
   const pages = await getPageList(data);
   
   const label = action === 'preview' ? 'Previewing' : 'Publishing';
@@ -150,8 +157,9 @@ async function previewOrPublishPages(data, action, setStatus, updatePageStatus) 
 }
 
 async function copyContent(data) {
+  const { siteName, sitePrefix } = data;
   const formData = new FormData();
-  const destination = `/${ORG}/${getSiteName(data.siteName)}`;
+  const destination = `/${ORG}/${getSiteName(siteName, sitePrefix)}`;
   const token = await getAccessToken();
   formData.set('destination', destination);
   const opts = {  method: 'POST', body: formData, headers: {
@@ -159,11 +167,11 @@ async function copyContent(data) {
   } };
 
   // TODO: Remove force delete. Copying tree doesn't seem to work
-  const del = await fetch(`${DA_ORIGIN}/source${destination}`, { method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    }
-   });
+  //const del = await fetch(`${DA_ORIGIN}/source${destination}`, { method: 'DELETE',
+  //  headers: {
+  //    'Authorization': `Bearer ${token}`,
+  //  }
+  // });
 
   const res = await fetch(`${DA_ORIGIN}/copy/${ORG}/milo-starter/`, opts);
 
