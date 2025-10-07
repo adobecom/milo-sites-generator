@@ -16,20 +16,6 @@ body {
   outline: none;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 80%, rgba(255, 0, 0, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(237, 34, 36, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(255, 0, 0, 0.02) 0%, transparent 50%);
-  z-index: -1;
-}
-
 main {
   max-width: 100%;
   margin: 0;
