@@ -18,7 +18,134 @@
 </head>
 <body>
   <main>
+    <div class="hero-section">
+      <h1>Milo Site Creator</h1>
+      <p>Create beautiful, professional websites in seconds with Adobe's powerful Milo framework. No coding required.</p>
+      <div class="hero-features">
+        <div class="feature-item">
+          <div class="feature-icon">📍</div>
+          <div class="feature-text">Localization</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📚</div>
+          <div class="feature-text">Library</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🧱</div>
+          <div class="feature-text">Blocks</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔍</div>
+          <div class="feature-text">SEO Schema</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">💯</div>
+          <div class="feature-text">100 LH Score</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          <div class="feature-text">MarTech</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔤</div>
+          <div class="feature-text">Fonts</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🖼️</div>
+          <div class="feature-text">Placeholders</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🔗</div>
+          <div class="feature-text">Interlinks</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">♿</div>
+          <div class="feature-text">Accessibility</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">🌐</div>
+          <div class="feature-text">Milo Ecosystem</div>
+        </div>
+      </div>
+    </div>
     <da-generator></da-generator>
   </main>
+  
+  <!-- Floating particles for visual appeal -->
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+  
+  <style>
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 0, 0, 0.2);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+      box-shadow: 0 0 6px rgba(255, 0, 0, 0.3);
+    }
+    
+    .particle:nth-child(1) {
+      left: 10%;
+      animation-delay: 0s;
+      animation-duration: 6s;
+    }
+    
+    .particle:nth-child(2) {
+      left: 20%;
+      animation-delay: 1s;
+      animation-duration: 8s;
+    }
+    
+    .particle:nth-child(3) {
+      left: 35%;
+      animation-delay: 2s;
+      animation-duration: 7s;
+    }
+    
+    .particle:nth-child(4) {
+      left: 70%;
+      animation-delay: 3s;
+      animation-duration: 9s;
+    }
+    
+    .particle:nth-child(5) {
+      left: 85%;
+      animation-delay: 4s;
+      animation-duration: 5s;
+    }
+    
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(100vh) scale(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      50% {
+        transform: translateY(-10vh) scale(1);
+      }
+    }
+  </style>
 </body>
 </html>

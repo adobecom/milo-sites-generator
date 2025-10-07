@@ -93,28 +93,60 @@ async function replaceTemplate(data) {
   }));
 }
 
-async function previewOrPublishPages(data, action, setStatus) {
+async function getPageList(data) {
   const parent = `/${ORG}/${getSiteName(data.siteName)}`;
+  const pages = [];
+  
+  const callback = (item) => {
+    if (item.path.endsWith('.svg') || item.path.endsWith('.png') || item.path.endsWith('.jpg')) return;
+    const pageName = item.path.replace(parent, '').replace('.html', '') || '/';
+    pages.push({
+      name: pageName,
+      path: item.path,
+      status: 'pending'
+    });
+  };
 
+  // Get the library
+  crawl({ path: `${parent}/.da`, callback, concurrent: 5, throttle: 250 });
+  const { results } = crawl({ path: parent, callback, concurrent: 5, throttle: 250 });
+  
+  await results;
+  return pages;
+}
+
+async function previewOrPublishPages(data, action, setStatus, updatePageStatus) {
+  const parent = `/${ORG}/${getSiteName(data.siteName)}`;
+  const pages = await getPageList(data);
+  
   const label = action === 'preview' ? 'Previewing' : 'Publishing';
   const token = await getAccessToken();
   const opts = { method: 'POST', headers: {
     'Authorization': `Bearer ${token}`,
   } };
 
-  const callback = async (item) => {
-    if (item.path.endsWith('.svg') || item.path.endsWith('.png') || item.path.endsWith('.jpg')) return;
-    setStatus({ message: `${label}: ${item.path.replace(parent, '').replace('.html', '')}` });
-    const aemPath = item.path.replace(parent, `${parent}/main`).replace('.html', '');
-    const resp = await fetch(`${AEM_ORIGIN}/${action}${aemPath}`, opts);
-    if (!resp.ok) throw new Error({ type: 'error', message: `Could not preview ${aemPath}` });
-  }
+  // Update status to show we're starting
+  setStatus({ 
+    message: `${label} ${pages.length} pages...`, 
+    pages: pages,
+    action: action 
+  });
 
-  // Get the library
-  crawl({ path: `${parent}/.da`, callback, concurrent: 5, throttle: 250 });
-  const { results } = crawl({ path: parent, callback, concurrent: 5, throttle: 250 });
+  // Process all pages concurrently
+  const promises = pages.map(async (page) => {
+    try {
+      updatePageStatus(page.name, 'processing');
+      const aemPath = page.path.replace(parent, `${parent}/main`).replace('.html', '');
+      const resp = await fetch(`${AEM_ORIGIN}/${action}${aemPath}`, opts);
+      if (!resp.ok) throw new Error(`Could not ${action} ${aemPath}`);
+      updatePageStatus(page.name, 'completed');
+    } catch (error) {
+      updatePageStatus(page.name, 'error');
+      throw error;
+    }
+  });
 
-  await results;
+  await Promise.all(promises);
 }
 
 async function copyContent(data) {
@@ -138,7 +170,7 @@ async function copyContent(data) {
   if (!res.ok) throw new Error(`Failed to copy content: ${res.statusText}`);
 }
 
-export async function createSite(data, setStatus) {
+export async function createSite(data, setStatus, updatePageStatus) {
   setStatus({ message: 'Copying content.' });
   await copyContent(data);
   setStatus({ message: 'Templating content.' });
@@ -146,8 +178,8 @@ export async function createSite(data, setStatus) {
   setStatus({ message: 'Creating new site.' });
   await createConfig(data);
   setStatus({ message: 'Previewing pages.' });
-  await previewOrPublishPages(data, 'preview', setStatus);
+  await previewOrPublishPages(data, 'preview', setStatus, updatePageStatus);
   setStatus({ message: 'Publishing pages.' });
-  await previewOrPublishPages(data, 'live', setStatus);
+  await previewOrPublishPages(data, 'live', setStatus, updatePageStatus);
   setStatus({ message: 'Done!' });
 }

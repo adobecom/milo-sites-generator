@@ -13,7 +13,16 @@ class Generator extends LitElement {
     _loading: { state: true },
     _status: { state: true },
     _time: { state: true },
+    _progress: { state: true },
+    _currentStep: { state: true },
+    _pages: { state: true },
   };
+
+  constructor() {
+    super();
+    this._time = '~1min for site creation';
+    this._pages = [];
+  }
 
   async connectedCallback() {
     super.connectedCallback();
@@ -29,12 +38,17 @@ class Generator extends LitElement {
     e.preventDefault();
     this._time = null;
     this._loading = true;
+    this._progress = 0;
+    this._currentStep = 0;
+    this._pages = [];
+    
     const formData = new FormData(e.target.closest('form'));
     const entries = Object.fromEntries(formData.entries());
 
     const empty = Object.keys(entries).some((key) => !entries[key]);
     if (empty) {
       this._status = { type: 'error', message: 'Some fields empty.' };
+      this._loading = false;
       return;
     }
 
@@ -48,15 +62,48 @@ class Generator extends LitElement {
       siteName: entries.siteName.replaceAll(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
     };
 
-    const setStatus = (status) => { this._status = status; };
+    const steps = [
+      'Copying content...',
+      'Templating content...',
+      'Creating new site...',
+      'Previewing pages...',
+      'Publishing pages...',
+      'Finalizing...'
+    ];
+
+    const setStatus = (status) => { 
+      this._status = status; 
+      // Update pages list if provided
+      if (status.pages) {
+        this._pages = status.pages;
+      }
+      // Update progress based on status message
+      const stepIndex = steps.findIndex(step => status.message.includes(step.split('...')[0]));
+      if (stepIndex !== -1) {
+        this._currentStep = stepIndex;
+        this._progress = ((stepIndex + 1) / steps.length) * 100;
+      }
+    };
+
+    const updatePageStatus = (pageName, status) => {
+      const pageIndex = this._pages.findIndex(page => page.name === pageName);
+      if (pageIndex !== -1) {
+        this._pages[pageIndex].status = status;
+        this._pages = [...this._pages]; // Trigger reactivity
+      }
+    };
 
     try {
-      await createSite(this._data, setStatus);
+      await createSite(this._data, setStatus, updatePageStatus);
+      this._progress = 100;
+      this._currentStep = steps.length - 1;
     } catch (e) {
       this._status = e;
+      this._loading = false;
     }
 
-    clearTimeout(getTime);
+    clearInterval(getTime);
+    this._loading = false;
     this._status = { type: 'success', message: `Site created in ${this.calculateCrawlTime(startTime)}.` };
   }
 
@@ -80,35 +127,76 @@ class Generator extends LitElement {
     `;
   }
 
+  renderProgressBar() {
+    if (!this._loading) return nothing;
+    
+    return html`
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${this._progress}%"></div>
+      </div>
+    `;
+  }
+
+  renderPageList() {
+    if (!this._pages.length || !this._loading) return nothing;
+    
+    const action = this._status?.action || 'processing';
+    const completedPages = this._pages.filter(page => page.status === 'completed').length;
+    const totalPages = this._pages.length;
+    
+    return html`
+      <div class="page-list-container">
+        <div class="page-list-header">
+          <h3>${action === 'preview' ? 'Previewing' : 'Publishing'} Pages (${completedPages}/${totalPages})</h3>
+        </div>
+        <div class="page-list">
+          ${this._pages.map(page => html`
+            <div class="page-item ${page.status}">
+              <div class="page-status-icon">
+                ${page.status === 'pending' ? '⏳' : 
+                  page.status === 'processing' ? '🔄' : 
+                  page.status === 'completed' ? '✅' : 
+                  page.status === 'error' ? '❌' : '⏳'}
+              </div>
+              <div class="page-name">${page.name}</div>
+              <div class="page-status">${page.status}</div>
+            </div>
+          `)}
+        </div>
+      </div>
+    `;
+  }
+
   renderForm() {
     return html`
       <form>
-        <div class="fieldgroup">
-          <label>Website name</label>
-          <sl-input type="text" name="siteName" placeholder="Add the name of your new milo powered project" value="milo-starter-1"></sl-input>
-        </div>
-        <div class="fieldgroup">
-          <label>Website description</label>
-          <sl-textarea class="tagline" name="siteDescription" resize="none" placeholder="Add a description for your site" value="description123" >description</sl-textarea>
-        </div>
-        <!--
-        <div class="fieldgroup">
-          <label>Principal's name</label>
-          <sl-input type="text" name="principalName" placeholder="Enter name"></sl-input>
-        </div>
-        <div class="fieldgroup">
-          <label>Principal's message</label>
-          <sl-textarea class="message" resize="none" name="principalMessage" placeholder="Enter message"></sl-textarea>
-        </div>
-        -->
-        <div class="form-footer">
-          <div>
+        <div class="subtitle">Fill in the details below to create your new Milo-powered website</div>
+        <div class="form-container">
+          <div class="fieldgroup">
+            <label>
+              <div class="field-icon">🌐</div>
+              Website name
+            </label>
+            <sl-input type="text" name="siteName" placeholder="Enter your website name" value="milo-starter-1"></sl-input>
           </div>
+          <div class="fieldgroup">
+            <label>
+              <div class="field-icon">📝</div>
+              Website description
+            </label>
+            <sl-textarea name="siteDescription" resize="vertical" placeholder="Describe your website in detail..." value="description123" rows="4">description</sl-textarea>
+          </div>
+        </div>
+        <div class="form-footer">
           <div class="time-actions">
             <p>${this._time}</p>
-            <sl-button ?disabled=${this._loading} @click=${this.handleSubmit}>Create site</sl-button>
+            <sl-button ?disabled=${this._loading} @click=${this.handleSubmit}>
+              ${this._loading ? html`<span class="loading-spinner"></span> Creating...` : 'Create site'}
+            </sl-button>
           </div>
         </div>
+        ${this.renderProgressBar()}
+        ${this.renderPageList()}
         ${this._status ? html`<p class="status ${this._status?.type || 'note'}">${this._status?.message}</p>` : nothing}
       </form>
     `
@@ -116,7 +204,6 @@ class Generator extends LitElement {
 
   render() {
     return html`
-      <h1>${this._heading}</h1>
       ${this._status?.type === 'success' ? this.renderSuccess() : this.renderForm()}
     `;
   }
