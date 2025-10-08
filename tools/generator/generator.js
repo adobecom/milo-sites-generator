@@ -214,7 +214,7 @@ class Generator extends LitElement {
               <div class="fieldgroup">
                 <label>
                   <div class="field-icon">🔗</div>
-                  GitHub Repository URL. Don't forget to add the <a href="https://github.com/apps/aem-code-sync" target="_blank">AEM Code Sync</a>)
+                  GitHub Repository URL. Don't forget to add the <a href="https://github.com/apps/aem-code-sync" target="_blank">AEM Code Sync</a>
                 </label>
                 <sl-input type="text" name="githubUrl" placeholder="https://github.com/adobecom/milo-starter" value="https://github.com/adobecom/milo-starter" help-text="Full GitHub repository URL"></sl-input>
               </div>
