@@ -178,14 +178,14 @@ class Generator extends LitElement {
               <div class="field-icon">🌐</div>
               Website name
             </label>
-            <sl-input type="text" name="siteName" placeholder="Enter your website name" value=""></sl-input>
+            <sl-input type="text" name="siteName" placeholder="Enter your website name" value="firestar"></sl-input>
           </div>
           <div class="fieldgroup">
             <label>
               <div class="field-icon">📝</div>
               Website description
             </label>
-            <sl-textarea name="siteDescription" resize="vertical" placeholder="Describe your website in detail..." value="" rows="4">description</sl-textarea>
+            <sl-textarea name="siteDescription" resize="vertical" placeholder="Describe your website in detail..." value="A demo project named Firestar for showcasing purposes." rows="4">description</sl-textarea>
           </div>
         </div>
         
