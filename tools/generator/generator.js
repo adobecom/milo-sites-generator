@@ -116,9 +116,9 @@ class Generator extends LitElement {
     return html`
       <div class="success-panel">
         <h2>Edit content</h2>
-        <p><a href="https://da.live/edit#/${ORG}${this._data.siteName}/gnav" target="_blank">Edit main navigation</a></p>
-        <p><a href="https://da.live/edit#/${ORG}${this._data.siteName}/footer" target="_blank">Edit footer</a></p>
-        <p><a href="https://da.live/#/${ORG}${this._data.siteName}" target="_blank">View all content</a></p>
+        <p><a href="https://da.live/edit#/${ORG}/${this._data.siteName}/gnav" target="_blank">Edit main navigation</a></p>
+        <p><a href="https://da.live/edit#/${ORG}/${this._data.siteName}/footer" target="_blank">Edit footer</a></p>
+        <p><a href="https://da.live/#/${ORG}/${this._data.siteName}" target="_blank">View all content</a></p>
       </div>
       <div class="success-panel">
         <h2>View site</h2>
@@ -178,14 +178,14 @@ class Generator extends LitElement {
               <div class="field-icon">🌐</div>
               Website name
             </label>
-            <sl-input type="text" name="siteName" placeholder="Enter your website name" value="milo-starter-1"></sl-input>
+            <sl-input type="text" name="siteName" placeholder="Enter your website name" value=""></sl-input>
           </div>
           <div class="fieldgroup">
             <label>
               <div class="field-icon">📝</div>
               Website description
             </label>
-            <sl-textarea name="siteDescription" resize="vertical" placeholder="Describe your website in detail..." value="description123" rows="4">description</sl-textarea>
+            <sl-textarea name="siteDescription" resize="vertical" placeholder="Describe your website in detail..." value="" rows="4">description</sl-textarea>
           </div>
         </div>
         
@@ -214,7 +214,7 @@ class Generator extends LitElement {
               <div class="fieldgroup">
                 <label>
                   <div class="field-icon">🔗</div>
-                  GitHub Repository URL
+                  GitHub Repository URL. Don't forget to add the <a href="https://github.com/apps/aem-code-sync" target="_blank">AEM Code Sync</a>)
                 </label>
                 <sl-input type="text" name="githubUrl" placeholder="https://github.com/adobecom/milo-starter" value="https://github.com/adobecom/milo-starter" help-text="Full GitHub repository URL"></sl-input>
               </div>
