@@ -171,7 +171,7 @@ class Generator extends LitElement {
   renderForm() {
     return html`
       <form>
-        <div class="subtitle">Fill in the details below to create your new Milo-powered website</div>
+        <h3>Create your website</h3>
         <div class="form-container">
           <div class="fieldgroup">
             <label>
