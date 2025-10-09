@@ -71,7 +71,7 @@ da-generator {
   font-size: 4rem;
   font-weight: 800;
   margin: 0 0 1rem 0;
-  color: #FF0000;
+  color: #333333;
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
@@ -138,7 +138,6 @@ da-generator {
 }
 
 .doc-link:hover {
-  border-color: #FF0000;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 0, 0, 0.1);
   text-decoration: none;
@@ -148,12 +147,12 @@ da-generator {
 .doc-icon {
   width: 48px;
   height: 48px;
-  background: #FF0000;
+  background: #e0e0e0;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #333333;
   font-size: 24px;
   flex-shrink: 0;
 }
@@ -217,18 +216,17 @@ da-generator {
 .feature-item:hover {
   background: #f5f5f5;
   transform: translateY(-2px);
-  border-color: #FF0000;
 }
 
 .feature-icon {
   width: 32px;
   height: 32px;
-  background: #FF0000;
+  background: #e0e0e0;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #333333;
   font-weight: bold;
   font-size: 18px;
 }
