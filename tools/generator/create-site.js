@@ -162,56 +162,15 @@ async function copyContent(data) {
     'Authorization': `Bearer ${token}`,
   } };
 
-  // TODO: Remove force delete. Copying tree doesn't seem to work
-  const sites = [
-    "aso",
-    "bacom",
-    "da-bacom",
-    "da-bacom-blog",
-    "da-bacom-graybox",
-    "da-bacom-lingo",
-    "da-bacom-pink",
-    "da-cc",
-    "da-cc-sandbox",
-    "da-dc",
-    "da-dx-partners",
-    "da-event-libs",
-    "da-events",
-    "da-events-blue",
-    "da-events-pink",
-    "da-express",
-    "da-express-milo",
-    "da-gwp-playground",
-    "da-help",
-    "da-helpx",
-    "da-helpx-gem",
-    "da-helpx-internal",
-    "da-homepage",
-    "da-marketo",
-    "da-playground",
-    "da-test-helpx-internal",
-    "dc",
-    "dc-sandbox",
-    "dx-partners-datest",
-    "event-libs",
-    "express-demo",
-    "federal",
-    "learning",
-    "mas",
-    "milo",
-    "milo-starter",
-    "non-prod-events",
-    "odin2eds",
-    "tmp",
-  ];
-  // TODO REMOVE THE FORCE DELETE, THIS IS JUST FOR DEMO PURPOSES.
-  if(!sites.includes(destination)) { 
-    const del = await fetch(`${DA_ORIGIN}/source${destination}`, { method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      }
-    });
-  }
+  // FYI you can't re-clone a site, you have to delete it first.
+  // Or create a new site with a different name.
+  // if(!sites.includes(destination)) { 
+  //  const del = await fetch(`${DA_ORIGIN}/source${destination}`, { method: 'DELETE',
+  //    headers: {
+  //      'Authorization': `Bearer ${token}`,
+  //    }
+  //  });
+  //}
 
   const res = await fetch(`${DA_ORIGIN}/copy/${ORG}/milo-starter/`, opts);
 
