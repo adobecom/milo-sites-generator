@@ -56,6 +56,7 @@ async function createConfig(data) {
       'Authorization': `Bearer ${token}`,
     },
   };
+  // TODO Caveat: Might need sign into sidekick first
   const res = await fetch(`${AEM_ORIGIN}/config/${ORG}/sites/${siteName}.json`, opts);
   if (!res.ok) throw new Error(`Failed to create config: ${res.statusText}`);
 }
