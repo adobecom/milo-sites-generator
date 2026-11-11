@@ -11,6 +11,16 @@ import {
 import {
   loadSections,
 } from '../../scripts/aem.js';
+import { sanitizeNode } from '../../scripts/safe-dom.js';
+
+const isSameOriginPath = (path) => {
+  if (typeof path !== 'string' || !path.startsWith('/')) return false;
+  try {
+    return new URL(path, window.location.origin).origin === window.location.origin;
+  } catch (e) {
+    return false;
+  }
+};
 
 /**
  * Loads a fragment.
@@ -18,13 +28,16 @@ import {
  * @returns {HTMLElement} The root element of the fragment
  */
 export async function loadFragment(path) {
-  if (path && path.startsWith('/')) {
+  if (isSameOriginPath(path)) {
     // eslint-disable-next-line no-param-reassign
     path = path.replace(/(\.plain)?\.html/, '');
+    if (!isSameOriginPath(`${path}.plain.html`)) return null;
     const resp = await fetch(`${path}.plain.html`);
     if (resp.ok) {
       const main = document.createElement('main');
-      main.innerHTML = await resp.text();
+      const doc = new DOMParser().parseFromString(await resp.text(), 'text/html');
+      main.append(...doc.body.childNodes);
+      sanitizeNode(main);
 
       // reset base path for media to fragment base
       const resetAttributeBase = (tag, attr) => {

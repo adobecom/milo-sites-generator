@@ -11,6 +11,8 @@
  */
 
 /* eslint-env browser */
+import { sanitizeNode } from './safe-dom.js';
+
 function sampleRUM(checkpoint, data) {
   // eslint-disable-next-line max-len
   const timeShift = () => (window.performance
@@ -496,7 +498,11 @@ async function decorateIcon(span, iconsList, prefix = '') {
         svgText,
         'image/svg+xml',
       ).documentElement;
-      span.innerHTML = svgDoc.outerHTML;
+      if (svgDoc.localName !== 'svg' || svgDoc.querySelector('parsererror')) {
+        throw new Error('Invalid SVG');
+      }
+      sanitizeNode(svgDoc);
+      span.replaceChildren(document.importNode(svgDoc, true));
     } catch (error) {
       console.error(`Failed to load SVG icon: ${iconName}`, error);
     }
@@ -647,7 +653,7 @@ function buildBlock(blockName, content) {
       vals.forEach((val) => {
         if (val) {
           if (typeof val === 'string') {
-            colEl.innerHTML += val;
+            colEl.append(val); // string content is inserted as text
           } else {
             colEl.appendChild(val);
           }

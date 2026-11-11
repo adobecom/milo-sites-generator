@@ -69,7 +69,7 @@ async function fetchFacebookPosts(block) {
         const top3PostsWithImage = [];
         for (let i = 0; i < posts.length; i += 1) {
           const item = posts[i];
-          if (item.full_picture && item.message) {
+          if (item.full_picture && item.message && isHttpUrl(item.full_picture)) {
             top3PostsWithImage.push(item);
             if (top3PostsWithImage.length === 3) break;
           }
@@ -85,34 +85,52 @@ async function fetchFacebookPosts(block) {
   });
 }
 
-// New function to update the Facebook feed with posts
-function updateFacebookFeed(posts, block) {
-  if (!posts || !posts.length || !block) return;
-
-  const fbPostsEl = posts.map(
-    (post) => `<div class = 'nsw-col nsw-col-md-6 nsw-col-lg-4'>
-      <div class = 'nsw-card nsw-card--highlight'>
+// Fixed card markup (no interpolation); dynamic values are set via DOM APIs below.
+const CARD_TEMPLATE = document.createElement("template");
+CARD_TEMPLATE.innerHTML = `<div class="nsw-col nsw-col-md-6 nsw-col-lg-4">
+      <div class="nsw-card nsw-card--highlight">
         <div class="nsw-card__image">
-        <img src="${post.full_picture}" alt="Facebook post image">
+        <img alt="Facebook post image">
         </div>
         <div class="nsw-card__content">
           <div class="nsw-card__copy">
             <p>
-              <a href='https://www.facebook.com/${post.id}'>${post.message}</a>
+              <a></a>
             </p>
           </div>
-          <div class='card-icon'>
+          <div class="card-icon">
             <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="#1578f2" d="M32 16.098C32 7.207 24.837 0 16 0S0 7.207 0 16.098C0 24.133 5.851 30.793 13.5 32V20.751H9.437v-4.653H13.5v-3.547c0-4.035 2.389-6.263 6.043-6.263 1.751 0 3.582.314 3.582.314v3.962h-2.018c-1.988 0-2.607 1.241-2.607 2.514v3.02h4.438l-.709 4.653h-3.728V32c7.649-1.208 13.5-7.867 13.5-15.902z"/></svg>
           </div>
           <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">east</span>
         </div>
       </div>
-    </div>`
-  );
+    </div>`;
+
+function isHttpUrl(value) {
+  try {
+    const { protocol } = new URL(value);
+    return protocol === "https:" || protocol === "http:";
+  } catch (error) {
+    return false;
+  }
+}
+
+function buildPostCard(post) {
+  const card = CARD_TEMPLATE.content.firstElementChild.cloneNode(true);
+  card.querySelector("img").src = post.full_picture;
+  const link = card.querySelector(".nsw-card__copy a");
+  link.href = `https://www.facebook.com/${encodeURIComponent(String(post.id))}`;
+  link.textContent = post.message;
+  return card;
+}
+
+// New function to update the Facebook feed with posts
+function updateFacebookFeed(posts, block) {
+  if (!posts || !posts.length || !block) return;
 
   const nswGrid = document.createElement("div");
   nswGrid.classList.add("nsw-grid");
-  nswGrid.innerHTML = fbPostsEl.join("");
+  nswGrid.append(...posts.map(buildPostCard));
 
   // Clear and update the block
   block.textContent = "";

@@ -1,6 +1,7 @@
 import nsw from 'nsw-design-system/dist/js/main.js';
 import { getMetadata, fetchPlaceholders } from '../../scripts/aem.js';
 import { loadFragment } from '../content-fragment/content-fragment.js';
+import { isSafeUrl, sanitizeNode } from '../../scripts/safe-dom.js';
 
 import 'nsw-design-system/src/components/main-nav/_main-nav.scss';
 import 'nsw-design-system/src/components/header/_header.scss';
@@ -17,74 +18,151 @@ function generateId() {
   return idCounter;
 }
 
-function createMastheadSection(mastheadContent) {
-  if (!mastheadContent) return '';
-  return `<div class="nsw-container">${mastheadContent}</div>`;
+const DEFAULT_SEARCH_PATH = '/search';
+
+function h(tag, attrs = {}, ...children) {
+  const el = document.createElement(tag);
+  Object.entries(attrs).forEach(([name, value]) => {
+    if (value === true) el.setAttribute(name, '');
+    else if (value !== false && value != null) el.setAttribute(name, String(value));
+  });
+  el.append(...children.filter((child) => child != null && child !== false));
+  return el;
+}
+
+// Only set a URL attribute when it passes the protocol check.
+function link(href, attrs = {}, ...children) {
+  const a = h('a', attrs, ...children);
+  if (isSafeUrl(href)) a.setAttribute('href', href);
+  return a;
+}
+
+function icon(name) {
+  return h('span', {
+    class: 'material-icons nsw-material-icons', focusable: 'false', 'aria-hidden': 'true',
+  }, name);
+}
+
+function srOnly(text) {
+  return h('span', { class: 'sr-only' }, text);
+}
+
+// Copies authored nodes (never serialises them) and strips active content.
+function cloneSanitized(nodes) {
+  const holder = document.createElement('div');
+  nodes.forEach((node) => holder.append(node.cloneNode(true)));
+  return Array.from(sanitizeNode(holder).childNodes);
+}
+
+function resolveSearchPath(value) {
+  const valid = typeof value === 'string' && !/[\s<>"'`]/.test(value) && isSafeUrl(value);
+  return valid ? value : DEFAULT_SEARCH_PATH;
+}
+
+function createMastheadSection(mastheadSource) {
+  const masthead = h('div', { class: 'nsw-masthead' });
+  if (mastheadSource?.childNodes.length) {
+    masthead.append(h('div', { class: 'nsw-container' }, ...cloneSanitized(Array.from(mastheadSource.childNodes))));
+  }
+  return masthead;
 }
 
 function createHeaderMain(headerDom) {
-  return `
-    <div class="nsw-header__main">
-      <div class="nsw-header__waratah">
-        <a href="/">
-          ${headerDom?.querySelector('picture')?.outerHTML}
-          <span class="sr-only">NSW Government</span>
-        </a>
-      </div>
-      <div class="nsw-header__name">
-        <div class="nsw-header__title">${headerDom?.children?.[1]?.innerHTML}</div>
-        ${headerDom.children?.[2] ? `<div class="nsw-header__subtitle">${headerDom?.children?.[2]?.innerHTML}</div>` : ''}
-      </div>
-    </div>
-  `;
+  const picture = headerDom?.querySelector('picture');
+  const title = headerDom?.children?.[1];
+  const subtitle = headerDom?.children?.[2];
+
+  return h(
+    'div',
+    { class: 'nsw-header__main' },
+    h(
+      'div',
+      { class: 'nsw-header__waratah' },
+      h(
+        'a',
+        { href: '/' },
+        ...(picture ? cloneSanitized([picture]) : []),
+        srOnly('NSW Government'),
+      ),
+    ),
+    h(
+      'div',
+      { class: 'nsw-header__name' },
+      h('div', { class: 'nsw-header__title' }, ...(title ? cloneSanitized(Array.from(title.childNodes)) : [])),
+      subtitle && h('div', { class: 'nsw-header__subtitle' }, ...cloneSanitized(Array.from(subtitle.childNodes))),
+    ),
+  );
 }
 
 function createHeaderControls() {
-  return `
-    <div class="nsw-header__menu">
-      <button type="button" class="js-open-nav" aria-expanded="false" aria-controls="main-nav">
-        <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">menu</span>
-        <span><span class="sr-only">Open</span> Menu</span>
-      </button>
-    </div>
-    <div class="nsw-header__search">
-      <button type="button" class="js-open-search" aria-expanded="false" aria-controls="header-search">
-        <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">search</span>
-        <span><span class="sr-only">Show</span> Search</span>
-      </button>
-    </div>
-  `;
+  return [
+    h(
+      'div',
+      { class: 'nsw-header__menu' },
+      h(
+        'button',
+        {
+          type: 'button', class: 'js-open-nav', 'aria-expanded': 'false', 'aria-controls': 'main-nav',
+        },
+        icon('menu'),
+        h('span', {}, srOnly('Open'), ' Menu'),
+      ),
+    ),
+    h(
+      'div',
+      { class: 'nsw-header__search' },
+      h(
+        'button',
+        {
+          type: 'button', class: 'js-open-search', 'aria-expanded': 'false', 'aria-controls': 'header-search',
+        },
+        icon('search'),
+        h('span', {}, srOnly('Show'), ' Search'),
+      ),
+    ),
+  ];
 }
 
 function createSearchArea(searchPagePath) {
-  return `
-    <div class="nsw-header__search-area js-search-area" id="header-search" hidden>
-      <form role="search" action='${searchPagePath}'>
-        <label for="nsw-header-input" class="sr-only">Search site for:</label>
-        <input class="nsw-header__input js-search-input" type="text" autocomplete="off" id="nsw-header-input" name="q"/>
-        <button class="nsw-icon-button nsw-icon-button--flex" type="submit" aria-controls="header-search">
-          <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">search</span>
-          <span class="sr-only">Search</span>
-        </button>
-      </form>
-      <button class="nsw-icon-button js-close-search" aria-expanded="true" aria-controls="header-search">
-        <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">close</span>
-        <span class="sr-only">Close search</span>
-      </button>
-    </div>
-  `;
+  return h(
+    'div',
+    { class: 'nsw-header__search-area js-search-area', id: 'header-search', hidden: true },
+    h(
+      'form',
+      { role: 'search', action: resolveSearchPath(searchPagePath) },
+      h('label', { for: 'nsw-header-input', class: 'sr-only' }, 'Search site for:'),
+      h('input', {
+        class: 'nsw-header__input js-search-input', type: 'text', autocomplete: 'off', id: 'nsw-header-input', name: 'q',
+      }),
+      h(
+        'button',
+        { class: 'nsw-icon-button nsw-icon-button--flex', type: 'submit', 'aria-controls': 'header-search' },
+        icon('search'),
+        srOnly('Search'),
+      ),
+    ),
+    h(
+      'button',
+      {
+        class: 'nsw-icon-button js-close-search', 'aria-expanded': 'true', 'aria-controls': 'header-search',
+      },
+      icon('close'),
+      srOnly('Close search'),
+    ),
+  );
 }
 
 function createHeaderSection(headerDom, searchPagePath) {
-  return `
-    <div class="nsw-header__container">
-      <div class="nsw-header__inner">
-        ${createHeaderMain(headerDom)}
-        ${createHeaderControls()}
-      </div>
-      ${createSearchArea(searchPagePath)}
-    </div>
-  `;
+  return h(
+    'div',
+    { class: 'nsw-header' },
+    h(
+      'div',
+      { class: 'nsw-header__container' },
+      h('div', { class: 'nsw-header__inner' }, createHeaderMain(headerDom), ...createHeaderControls()),
+      createSearchArea(searchPagePath),
+    ),
+  );
 }
 
 // Navigation Functions
@@ -132,115 +210,117 @@ function parseNavigationStructure(elements) {
   return navigationArr;
 }
 
-function createSubNavigation(subItem) {
-  if (!subItem.subItems.length) return '';
+function createCloseNavButton() {
+  return h(
+    'button',
+    { class: 'nsw-icon-button js-close-nav', type: 'button', 'aria-expanded': 'true' },
+    icon('close'),
+    srOnly('Close Menu'),
+  );
+}
 
-  return `
-    <div class="nsw-main-nav__sub-nav" role="region" aria-label="${subItem.text} Submenu" id="sub-nav-${subItem.id}">
-      <div class="nsw-main-nav__header">
-        <button class="nsw-icon-button nsw-icon-button--flex js-close-sub-nav" type="button" aria-expanded="true" aria-controls="sub-nav-${subItem.id}">
-          <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">keyboard_arrow_left</span>
-          <span>Back<span class="sr-only"> to previous menu</span></span>
-        </button>
-        <button class="nsw-icon-button js-close-nav" type="button" aria-expanded="true">
-          <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">close</span>
-          <span class="sr-only">Close Menu</span>
-        </button>
-      </div>
-      <div class="nsw-main-nav__title">
-        <a href="${subItem.href}">
-          <span>${subItem.text}</span>
-        </a>
-      </div>
-      <ul class="nsw-main-nav__sub-list">
-        ${subItem.subItems.map((subChild) => `
-          <li>
-            <a href="${subChild.href}">
-              <span>${subChild.text}</span>
-            </a>
-          </li>`).join('')}
-      </ul>
-    </div>
-  `;
+function createSubNavHeader(subNavId) {
+  return h(
+    'div',
+    { class: 'nsw-main-nav__header' },
+    h(
+      'button',
+      {
+        class: 'nsw-icon-button nsw-icon-button--flex js-close-sub-nav',
+        type: 'button',
+        'aria-expanded': 'true',
+        'aria-controls': subNavId,
+      },
+      icon('keyboard_arrow_left'),
+      h('span', {}, 'Back', srOnly(' to previous menu')),
+    ),
+    createCloseNavButton(),
+  );
+}
+
+function createSubNavigation(subItem) {
+  if (!subItem.subItems.length) return null;
+
+  const subNavId = `sub-nav-${subItem.id}`;
+  return h(
+    'div',
+    {
+      class: 'nsw-main-nav__sub-nav', role: 'region', 'aria-label': `${subItem.text} Submenu`, id: subNavId,
+    },
+    createSubNavHeader(subNavId),
+    h('div', { class: 'nsw-main-nav__title' }, link(subItem.href, {}, h('span', {}, subItem.text))),
+    h(
+      'ul',
+      { class: 'nsw-main-nav__sub-list' },
+      ...subItem.subItems.map((subChild) => h('li', {}, link(subChild.href, {}, h('span', {}, subChild.text)))),
+    ),
+  );
 }
 
 function createNavigationItem(item) {
   if (!item.links.length) {
-    return `
-      <li>
-        ${item.titleHref ? `<a href="${item.titleHref}"><span>${item.title}</span></a>` : `<span>${item.title}</span>`}
-      </li>
-    `;
+    return h('li', {}, item.titleHref ? link(item.titleHref, {}, h('span', {}, item.title)) : h('span', {}, item.title));
   }
 
-  return `
-    <li>
-      <a href="${item.titleHref}" role="button" aria-expanded="false" aria-controls="sub-nav-${item.id}">
-        <span>${item.title}</span>
-        <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">keyboard_arrow_right</span>
-      </a>
-      <div class="nsw-main-nav__sub-nav" role="region" aria-label="${item.title} Submenu" id="sub-nav-${item.id}">
-        <div class="nsw-main-nav__header">
-          <button class="nsw-icon-button nsw-icon-button--flex js-close-sub-nav" type="button" aria-expanded="true" aria-controls="sub-nav-${item.id}">
-            <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">keyboard_arrow_left</span>
-            <span>Back<span class="sr-only"> to previous menu</span></span>
-          </button>
-          <button class="nsw-icon-button js-close-nav" type="button" aria-expanded="true">
-            <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">close</span>
-            <span class="sr-only">Close Menu</span>
-          </button>
-        </div>
-        <div class="nsw-main-nav__title">
-          ${item.titleHref ? `
-            <a href="${item.titleHref}">
-              <span>${item.title}</span>
-              <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">east</span>
-            </a>
-          ` : `<span>${item.title}</span>`}
-        </div>
-        <div class="nsw-main-nav__description">${item.description || ''}</div>
-        <ul class="nsw-main-nav__sub-list">
-          ${item.links.map((subItem) => `
-            <li>
-              <a href="${subItem.href}" role="button" aria-expanded="false" aria-controls="sub-nav-${subItem.id}">
-                <span>${subItem.text}</span>
-                ${subItem.subItems.length ? `
-                  <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">keyboard_arrow_right</span>
-                ` : ''}
-              </a>
-              ${createSubNavigation(subItem)}
-            </li>
-          `).join('')}
-        </ul>
-      </div>
-    </li>
-  `;
+  const subNavId = `sub-nav-${item.id}`;
+  return h(
+    'li',
+    {},
+    link(
+      item.titleHref,
+      { role: 'button', 'aria-expanded': 'false', 'aria-controls': subNavId },
+      h('span', {}, item.title),
+      icon('keyboard_arrow_right'),
+    ),
+    h(
+      'div',
+      {
+        class: 'nsw-main-nav__sub-nav', role: 'region', 'aria-label': `${item.title} Submenu`, id: subNavId,
+      },
+      createSubNavHeader(subNavId),
+      h(
+        'div',
+        { class: 'nsw-main-nav__title' },
+        item.titleHref
+          ? link(item.titleHref, {}, h('span', {}, item.title), icon('east'))
+          : h('span', {}, item.title),
+      ),
+      h('div', { class: 'nsw-main-nav__description' }, item.description || ''),
+      h(
+        'ul',
+        { class: 'nsw-main-nav__sub-list' },
+        ...item.links.map((subItem) => h(
+          'li',
+          {},
+          link(
+            subItem.href,
+            { role: 'button', 'aria-expanded': 'false', 'aria-controls': `sub-nav-${subItem.id}` },
+            h('span', {}, subItem.text),
+            subItem.subItems.length ? icon('keyboard_arrow_right') : null,
+          ),
+          createSubNavigation(subItem),
+        )),
+      ),
+    ),
+  );
 }
 
 function createNavigationMenu(navigationArr) {
-  return `
-    <nav class="nsw-main-nav js-mega-menu" id="main-nav" aria-label="Main menu">
-      <div class="nsw-main-nav__header">
-        <div class="nsw-main-nav__title">Menu</div>
-        <button class="nsw-icon-button js-close-nav" type="button" aria-expanded="true">
-          <span class="material-icons nsw-material-icons" focusable="false" aria-hidden="true">close</span>
-          <span class="sr-only">Close Menu</span>
-        </button>
-      </div>
-      <ul class="nsw-main-nav__list">
-        ${navigationArr.map(createNavigationItem).join('')}
-      </ul>
-    </nav>
-  `;
+  return h(
+    'nav',
+    { class: 'nsw-main-nav js-mega-menu', id: 'main-nav', 'aria-label': 'Main menu' },
+    h('div', { class: 'nsw-main-nav__header' }, h('div', { class: 'nsw-main-nav__title' }, 'Menu'), createCloseNavButton()),
+    h('ul', { class: 'nsw-main-nav__list' }, ...navigationArr.map(createNavigationItem)),
+  );
 }
 
 function createSkipLinks() {
-  return `
-    <nav class="nsw-skip" aria-label="Skip to links">
-      <a href="#main-nav"><span>Skip to navigation</span></a>
-      <a href="#"><span>Skip to content</span></a>
-    </nav>
-  `;
+  return h(
+    'nav',
+    { class: 'nsw-skip', 'aria-label': 'Skip to links' },
+    h('a', { href: '#main-nav' }, h('span', {}, 'Skip to navigation')),
+    h('a', { href: '#' }, h('span', {}, 'Skip to content')),
+  );
 }
 
 /**
@@ -270,28 +350,21 @@ export default async function decorate(block) {
 
   if (!navDom) return;
 
-  // Create masthead content
-  const mastheadContent = headerSections.length === 3
-    ? headerSections?.[0].querySelector('p')?.innerHTML
-    : '';
+  // Masthead source paragraph (optional, only present with 3 sections)
+  const mastheadSource = headerSections.length === 3
+    ? headerSections[0].querySelector('p')
+    : null;
 
   // Parse navigation structure
   const navigationArr = parseNavigationStructure(Array.from(navDom.children));
 
-  // Build header HTML
-  const headerHTML = `
-    ${createSkipLinks()}
-    <div class="nsw-masthead">
-      ${createMastheadSection(mastheadContent)}
-    </div>
-    <div class="nsw-header">
-      ${createHeaderSection(headerDom, searchPagePath)}
-    </div>
-    ${createNavigationMenu(navigationArr)}
-  `;
-
   // Update DOM and initialize components
-  block.innerHTML = headerHTML;
+  block.replaceChildren(
+    createSkipLinks(),
+    createMastheadSection(mastheadSource),
+    createHeaderSection(headerDom, searchPagePath),
+    createNavigationMenu(navigationArr),
+  );
   new nsw.Navigation(block.querySelector('#main-nav')).init();
   block.querySelectorAll('button.js-open-search, button.js-close-search').forEach((button) => {
     new nsw.SiteSearch(button).init();
